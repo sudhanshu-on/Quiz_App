@@ -160,7 +160,7 @@ export default function App() {
   }
 
   return (
-  <div className="container mx-auto p-4">
+  <div className="flex flex-col items-center justify-center min-h-screen p-4 bg-gray-100">
     {/* Question */}
     <QuestionCard 
       key={currentIndex}      // force re-render
@@ -169,7 +169,7 @@ export default function App() {
     />
 
     {/* Timer */}
-    <div className="my-4">
+    <div className="w-full max-w-3xl my-4">
       <TimerBar
         key={currentIndex}     // resets timer each question
         duration={timePerQuestion}
