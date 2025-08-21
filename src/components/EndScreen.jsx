@@ -1,13 +1,18 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { saveScore } from '../utils/storage';
+import { saveScore, getScores } from '../utils/storage';
 
 function EndScreen({ score, total, onPlayAgain }) {
   const [playerName, setPlayerName] = useState('');
   const [isSaved, setIsSaved] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [leaderboard, setLeaderboard] = useState([]);
 
   const percentage = Math.round((score / total) * 100);
+
+  useEffect(() => {
+    setLeaderboard(getScores());
+  }, []);
 
   const getScoreMessage = () => {
     if (percentage >= 90) return { emoji: '🏆', message: 'Outstanding! Perfect score!', color: 'text-yellow-600' };
@@ -20,14 +25,14 @@ function EndScreen({ score, total, onPlayAgain }) {
 
   const scoreInfo = getScoreMessage();
 
-  const handleSaveScore = async () => {
+  const handleSaveScore = () => {
     if (!playerName.trim()) {
       alert('Please enter your name!');
       return;
     }
 
     setIsLoading(true);
-    
+
     const success = saveScore({
       name: playerName.trim(),
       score,
@@ -39,8 +44,9 @@ function EndScreen({ score, total, onPlayAgain }) {
 
     if (success) {
       setIsSaved(true);
+      // Update leaderboard after saving
+      setLeaderboard(getScores());
       setTimeout(() => {
-        // Trigger leaderboard update by dispatching custom event
         window.dispatchEvent(new CustomEvent('scoresUpdated'));
       }, 100);
     } else {
@@ -133,10 +139,32 @@ function EndScreen({ score, total, onPlayAgain }) {
           </motion.div>
         )}
 
+        {/* Leaderboard */}
+        {leaderboard.length > 0 && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 1 }}
+            className="mb-8 p-6 bg-gray-50 rounded-xl text-left max-w-md mx-auto"
+          >
+            <h2 className="text-2xl font-bold mb-4">Leaderboard</h2>
+            <ul>
+              {leaderboard
+                .sort((a, b) => b.score - a.score) // highest score first
+                .slice(0, 5) // show top 5
+                .map((s, index) => (
+                  <li key={index} className="mb-2">
+                    {s.name} — {s.score}/{s.total} ({s.percentage}%)
+                  </li>
+                ))}
+            </ul>
+          </motion.div>
+        )}
+
         <motion.div
           initial={{ y: 20, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
-          transition={{ delay: 1 }}
+          transition={{ delay: 1.2 }}
           className="space-y-4"
         >
           <motion.button
@@ -147,15 +175,6 @@ function EndScreen({ score, total, onPlayAgain }) {
           >
             🚀 Play Again
           </motion.button>
-        </motion.div>
-
-        <motion.div
-          initial={{ y: 20, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          transition={{ delay: 1.2 }}
-          className="mt-8 p-4 bg-indigo-50 rounded-xl text-sm text-indigo-700"
-        >
-          <p>Share your score and challenge your friends!</p>
         </motion.div>
       </motion.div>
     </div>

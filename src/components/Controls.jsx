@@ -42,16 +42,6 @@ function Controls({ canNext, canSkip, canPause, isPaused, onNext, onSkip, onTogg
         </motion.button>
       )}
       
-      <motion.button
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        whileHover={{ scale: 1.05 }}
-        whileTap={{ scale: 0.95 }}
-        onClick={onRestart}
-        className="btn-secondary text-red-600 border-red-200 hover:bg-red-50 hover:border-red-300"
-      >
-        🔄 Restart
-      </motion.button>
     </div>
   );
 }

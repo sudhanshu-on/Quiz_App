@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import QuestionCard from "./components/QuestionCard";
 import EndScreen from "./components/EndScreen";
@@ -12,9 +12,9 @@ export default function App() {
   const [showEnd, setShowEnd] = useState(false);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [score, setScore] = useState(0);
-  const timePerQuestion = 15; // 15 seconds each
+  const timePerQuestion = 10; // 15 seconds each
 
-  // ✅ Fetch questions
+  // Fetch questions
   useEffect(() => {
     async function fetchQuestions() {
       try {
@@ -41,7 +41,7 @@ export default function App() {
     fetchQuestions();
   }, []);
 
-  // ✅ Start / Reset game
+  // Start / Reset game
   const startGame = () => {
     setGameStarted(true);
     setShowEnd(false);
@@ -56,7 +56,42 @@ export default function App() {
     setScore(0);
   };
 
-  // ✅ Before game starts (Home screen)
+  const currentQuestion = questions[currentIndex] || null;
+
+  // Keyboard support: 1-4 keys
+  useEffect(() => {
+    const handleKey = (e) => {
+      if (!gameStarted || showEnd) return;
+      const keys = ["1", "2", "3", "4"];
+      const idx = keys.indexOf(e.key);
+      if (idx !== -1 && currentQuestion) {
+        handleAnswer(currentQuestion.options[idx]);
+      }
+    };
+    window.addEventListener("keydown", handleKey);
+    return () => window.removeEventListener("keydown", handleKey);
+  }, [currentIndex, gameStarted, showEnd, currentQuestion]);
+
+  // Handle answer selection
+  const handleAnswer = (option) => {
+    if (option === currentQuestion.answer) setScore((s) => s + 1);
+
+    if (currentIndex + 1 < questions.length) setCurrentIndex((c) => c + 1);
+    else setShowEnd(true);
+  };
+
+  // Handle skip
+  const handleSkip = () => {
+  console.log("Skipping question:", currentIndex);
+  if (currentIndex + 1 < questions.length) {
+    setCurrentIndex(c => c + 1);
+  } else {
+    setShowEnd(true);
+  }
+};
+
+
+  // Home screen
   if (!gameStarted && !showEnd) {
     return (
       <div className="min-h-screen flex items-center justify-center p-4">
@@ -102,7 +137,7 @@ export default function App() {
     );
   }
 
-  // ✅ Loading state
+  // Loading state
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -111,19 +146,11 @@ export default function App() {
     );
   }
 
-  // ✅ End screen
+  // End screen
   if (showEnd) {
-    return (
-      <EndScreen
-        score={score}
-        total={questions.length}
-        onRestart={resetGame}
-      />
-    );
+    return <EndScreen score={score} total={questions.length} onPlayAgain={resetGame} />;
   }
 
-  // ✅ Show current question
-  const currentQuestion = questions[currentIndex] || null;
   if (!currentQuestion) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -133,38 +160,26 @@ export default function App() {
   }
 
   return (
-    <div className="container mx-auto p-4">
-      {/* ✅ Question */}
-      <QuestionCard
-        question={currentQuestion}
-        onAnswer={(option) => {
-          if (option === currentQuestion.answer) {
-            setScore((s) => s + 1);
-          }
-          if (currentIndex + 1 < questions.length) {
-            setCurrentIndex((c) => c + 1);
-          } else {
-            setShowEnd(true);
-          }
-        }}
+  <div className="container mx-auto p-4">
+    {/* Question */}
+    <QuestionCard 
+      key={currentIndex}      // force re-render
+      question={currentQuestion} 
+      onAnswer={handleAnswer} 
+    />
+
+    {/* Timer */}
+    <div className="my-4">
+      <TimerBar
+        key={currentIndex}     // resets timer each question
+        duration={timePerQuestion}
+        onTimeUp={handleSkip}
       />
-
-      {/* ✅ Timer */}
-      <div className="my-4">
-        <TimerBar
-          duration={timePerQuestion}
-          onTimeUp={() => {
-            if (currentIndex + 1 < questions.length) {
-              setCurrentIndex((c) => c + 1);
-            } else {
-              setShowEnd(true);
-            }
-          }}
-        />
-      </div>
-
-      {/* ✅ Controls */}
-      <Controls />
     </div>
-  );
+
+    {/* Controls */}
+    <Controls onSkip={handleSkip} />
+  </div>
+);
+
 }
